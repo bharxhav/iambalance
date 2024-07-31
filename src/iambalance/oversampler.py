@@ -30,25 +30,23 @@ class Oversampler():
     def __init__(
         self,
         methods: List[str] = None,
-        oversample_contribution: List[float] = None,
-        oversample_count: int = 100,
+        method_contributions: List[float] = None,
         iterations: int = 1,
     ):
-        if not isinstance(oversample_contribution, list) or not all(isinstance(i, float) for i in oversample_contribution):
+        if not isinstance(method_contributions, list) or not all(isinstance(i, float) for i in method_contributions):
             raise ValueError("oversample_size must be a list of floats.")
-        if len(oversample_contribution) != len(methods):
+        if len(method_contributions) != len(methods):
             raise ValueError(
                 "Length of oversample_contributions must match length of methods.")
 
         self.methods = methods
-        self.oversample_contribution = oversample_contribution
-        self.oversample_count = oversample_count
+        self.method_contributions = method_contributions
         self.iterations = iterations
 
         if self.methods is None:
             self.methods = ["random", "mutation", "smote", "adasyn"]
-        if self.oversample_contribution is None:
-            self.oversample_contribution = list(
+        if self.method_contributions is None:
+            self.method_contributions = list(
                 1/len(self.methods) for _ in self.methods)
 
         # Purity object
