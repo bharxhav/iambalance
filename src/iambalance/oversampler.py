@@ -67,61 +67,61 @@ class Oversampler():
 
     def _fit_resample_random(
         self, x: pd.DataFrame, y: pd.Series
-    ) -> Tuple[pd.DataFrame, pd.Series]:
+    ) -> pd.DataFrame:
         """Perform random oversampling.
 
         Args:
-            X: Input features.
+            x: Input features.
             y: Target variable.
 
         Returns:
-            Tuple of random oversampled features and target.
+            Random oversampled features.
         """
         pass
 
     def _fit_resample_mutation(
         self, x: pd.DataFrame, y: pd.Series
-    ) -> Tuple[pd.DataFrame, pd.Series]:
+    ) -> pd.DataFrame:
         """Perform mutation oversampling.
 
         Args:
-            X: Input features.
+            x: Input features.
             y: Target variable.
 
         Returns:
-            Tuple of mutation oversampled features and target.
+            Mutation oversampled features.
         """
         pass
 
     def _fit_resample_smote(
         self, x: pd.DataFrame, y: pd.Series
-    ) -> Tuple[pd.DataFrame, pd.Series]:
+    ) -> pd.DataFrame:
         """Perform SMOTE oversampling.
 
         Args:
-            X: Input features.
+            x: Input features.
             y: Target variable.
 
         Returns:
-            Tuple of SMOTE oversampled features and target.
+            SMOTE oversampled features.
         """
         smote = SMOTE()
-        return smote.fit_resample(x, y)
+        return smote.fit_resample(x, y)[0]
 
     def _fit_resample_adasyn(
         self, x: pd.DataFrame, y: pd.Series
-    ) -> Tuple[pd.DataFrame, pd.Series]:
+    ) -> pd.DataFrame:
         """Perform ADASYN oversampling.
 
         Args:
-            X: Input features.
+            x: Input features.
             y: Target variable.
 
         Returns:
-            Tuple of ADASYN oversampled features and target.
+            ADASYN oversampled features.
         """
         adasyn = ADASYN()
-        return adasyn.fit_resample(x, y)
+        return adasyn.fit_resample(x, y)[0]
 
     def get_oversampled_fingerprint(self) -> List[int]:
         """Get indices of oversampled rows.
