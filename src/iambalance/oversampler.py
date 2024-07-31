@@ -1,5 +1,6 @@
 """Oversampler module for iambalance package."""
 
+from .purity import Purity
 from typing import List, Tuple, Dict
 import pandas as pd
 from imblearn.over_sampling import SMOTE, ADASYN
@@ -41,7 +42,9 @@ class Oversampler():
         self.oversample_contribution = oversample_contribution
         self.oversample_count = oversample_count
         self.iterations = iterations
-        self.purity_trend = []
+
+        # Purity object
+        self.purity = Purity()
 
     def fit_resample(
         self, x: pd.DataFrame, y: pd.Series
@@ -87,47 +90,13 @@ class Oversampler():
         adasyn = ADASYN()
         return adasyn.fit_resample(x, y)
 
-    def get_purity_trend(self) -> List[Tuple]:
-        """Get the purity trend.
+    def _log_purity(self):
+        pass
+
+    def get_purity_object(self) -> Purity:
+        """Return the purity object.
 
         Returns:
-            List of tuples containing purity trends.
+            Purity object.
         """
-        return self.purity_trend
-
-    def plot_purity_trend(self):
-        """Plot the purity trend using seaborn."""
-        pass
-
-    def get_oversampled_indices(self) -> List[int]:
-        """Get indices of oversampled rows.
-
-        Returns:
-            List of indices of oversampled rows.
-        """
-        pass
-
-    def get_method_distribution(self) -> Dict[str, float]:
-        """Get distribution of oversampling methods used.
-
-        Returns:
-            Dictionary with methods as keys and their proportions as values.
-        """
-        pass
-
-    def save_oversampled_data(self, filename: str):
-        """Save the oversampled dataset to a file.
-
-        Args:
-            filename: Name of the file to save the data.
-        """
-        pass
-
-    def compare_distributions(self, original: pd.DataFrame, oversampled: pd.DataFrame):
-        """Compare feature distributions before and after oversampling.
-
-        Args:
-            original: Original dataset.
-            oversampled: Oversampled dataset.
-        """
-        pass
+        return self.purity
