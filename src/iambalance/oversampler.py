@@ -1,9 +1,9 @@
 """Oversampler module for iambalance package."""
 
-from .purity import Purity
-from typing import List, Tuple, Dict
+from typing import List, Tuple
 import pandas as pd
 from imblearn.over_sampling import SMOTE, ADASYN
+from .purity import Purity
 
 
 class Oversampler():
