@@ -1,7 +1,6 @@
 """Oversampler module for iambalance package."""
 
-from typing import List, Tuple, Dict, Any
-import numpy as np
+from typing import List, Tuple, Dict
 import pandas as pd
 from imblearn.over_sampling import SMOTE, ADASYN
 from sklearn.base import BaseEstimator, ClassifierMixin
@@ -29,19 +28,11 @@ class Oversampler(BaseEstimator, ClassifierMixin):
         oversample_count: int = 100,
         iterations: int = 1,
     ):
-        """Initialize the Oversampler.
-
-        Args:
-            methods: List of oversampling methods to use.
-            oversample_size: Proportion of oversampling for each method.
-            oversample_count: Number of rows to oversample per iteration.
-            iterations: Number of iterations for oversampling.
-
-        Raises:
-            ValueError: If the sum of oversample_size is not 1.
-        """
-        if sum(oversample_size) != 1:
-            raise ValueError("Sum of oversample_size must be 1.")
+        if not isinstance(oversample_size, list) or not all(isinstance(i, float) for i in oversample_size):
+            raise ValueError("oversample_size must be a list of floats.")
+        if sum(oversample_size) != 1.0:
+            raise ValueError(
+                "The elements of oversample_size must sum to 1.0.")
 
         self.methods = methods
         self.oversample_size = oversample_size
