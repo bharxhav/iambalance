@@ -1,6 +1,6 @@
 """Oversampler module for imbalance package."""
 
-from typing import Any, List, Tuple
+from typing import Any, List
 import numpy as np
 import pandas as pd
 from imblearn.over_sampling import SMOTE, ADASYN
@@ -22,7 +22,6 @@ class Oversampler:
         methods (List[str]): List of oversampling methods to use.
         method_contributions (List[float]): Proportion of oversampling for each method.
         iterations (int): Number of iterations for oversampling.
-        purity (Purity): Purity object for measuring data quality.
 
     Raises:
         ValueError: If method_contributions is not a list of floats or if its length
@@ -34,12 +33,15 @@ class Oversampler:
         methods: List[str] = None,
         method_contributions: List[float] = None,
         iterations: int = 1,
+        purity_range: int = 0,
     ):
         if not isinstance(method_contributions, list) or not all(isinstance(i, float) for i in method_contributions):
             raise ValueError("method_contributions must be a list of floats.")
         if len(method_contributions) != len(methods):
             raise ValueError(
                 "Length of method_contributions must match length of methods.")
+        if purity_range not in [0, 1, 2]:
+            raise ValueError("purity_range must be 0, 1, or 2.")
 
         self.methods = methods or ["random", "mutation", "smote", "adasyn"]
         self.method_contributions = method_contributions or [
@@ -73,15 +75,14 @@ class Oversampler:
         Args:
             x (pd.DataFrame): Input features.
             y (str): Name of the target variable.
-            nrows (int): Number of rows to be generated.
+            nrows (int): Number of new rows to be generated.
             target_class (Any): The class that must be generated.
 
         Returns:
-            pd.DataFrame: Random oversampled features.
+            pd.DataFrame: Newly generated rows using random oversampling.
         """
         minority_class = x[x[y] == target_class]
-        oversampled = minority_class.sample(n=nrows, replace=True)
-        return pd.concat([x, oversampled], ignore_index=True)
+        return minority_class.sample(n=nrows, replace=True)
 
     def _fit_resample_mutation(
         self, x: pd.DataFrame, y: str, nrows: int, target_class: Any
@@ -94,11 +95,11 @@ class Oversampler:
         Args:
             x (pd.DataFrame): Input features.
             y (str): Name of the target variable.
-            nrows (int): Number of rows to be generated.
+            nrows (int): Number of new rows to be generated.
             target_class (Any): The class that must be generated.
 
         Returns:
-            pd.DataFrame: Mutation oversampled features.
+            pd.DataFrame: Newly generated rows using mutation oversampling.
         """
         minority_class = x[x[y] == target_class]
         oversampled = minority_class.sample(n=nrows, replace=True)
@@ -110,7 +111,7 @@ class Oversampler:
                 oversampled[column] += np.random.normal(
                     0, mutation, oversampled.shape[0])
 
-        return pd.concat([x, oversampled], ignore_index=True)
+        return oversampled
 
     def _fit_resample_smote(
         self, x: pd.DataFrame, y: str, nrows: int, target_class: Any
@@ -123,20 +124,22 @@ class Oversampler:
         Args:
             x (pd.DataFrame): Input features.
             y (str): Name of the target variable.
-            nrows (int): Number of rows to be generated.
+            nrows (int): Number of new rows to be generated.
             target_class (Any): The class that must be generated.
 
         Returns:
-            pd.DataFrame: SMOTE oversampled features.
+            pd.DataFrame: Newly generated rows using SMOTE oversampling.
         """
-        smote = SMOTE(sampling_strategy={target_class: nrows})
+        smote = SMOTE(sampling_strategy={target_class: x.shape[0] + nrows})
         target = x[y]
         features = x.drop(columns=[y])
         features_resampled, target_resampled = smote.fit_resample(
             features, target)
         x_resampled = features_resampled.copy()
         x_resampled[y] = target_resampled
-        return x_resampled
+
+        # Return only the newly generated rows
+        return x_resampled.iloc[-nrows:]
 
     def _fit_resample_adasyn(
         self, x: pd.DataFrame, y: str, nrows: int, target_class: Any
@@ -149,20 +152,22 @@ class Oversampler:
         Args:
             x (pd.DataFrame): Input features.
             y (str): Name of the target variable.
-            nrows (int): Number of rows to be generated.
+            nrows (int): Number of new rows to be generated.
             target_class (Any): The class that must be generated.
 
         Returns:
-            pd.DataFrame: ADASYN oversampled features.
+            pd.DataFrame: Newly generated rows using ADASYN oversampling.
         """
-        adasyn = ADASYN(sampling_strategy={target_class: nrows})
+        adasyn = ADASYN(sampling_strategy={target_class: x.shape[0] + nrows})
         target = x[y]
         features = x.drop(columns=[y])
         features_resampled, target_resampled = adasyn.fit_resample(
             features, target)
         x_resampled = features_resampled.copy()
         x_resampled[y] = target_resampled
-        return x_resampled
+
+        # Return only the newly generated rows
+        return x_resampled.iloc[-nrows:]
 
     def get_oversampled_fingerprint(self) -> pd.DataFrame:
         """Get indices of oversampled rows.
