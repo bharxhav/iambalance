@@ -9,12 +9,17 @@ from .purity import Purity
 class Oversampler():
     """A class for performing multiple oversampling techniques.
 
-    This class combines various oversampling methods including SMOTE and ADASYN.
+    This class combines various oversampling methods:
+        - random - Random oversampling
+        - mutation - Random oversampling with mutation to neighboring columns.
+        - smote - Synthetic Minority Over-sampling Technique.
+        - adasyn - Adaptive Synthetic Sampling Approach for Imbalanced Learning.
+
     It allows for customized oversampling strategies and includes purity measures.
 
     Attributes:
         methods (List[str]): List of oversampling methods to use.
-        oversample_size (List[float]): Proportion of oversampling for each method.
+        oversample_contribution (List[float]): Proportion of oversampling for each method.
         oversample_count (int): Number of rows to oversample per iteration.
         iterations (int): Number of iterations for oversampling.
         purity_trend (List[Tuple]): List to store purity trends.
@@ -60,6 +65,34 @@ class Oversampler():
         """
         pass
 
+    def _fit_resample_random(
+        self, x: pd.DataFrame, y: pd.Series
+    ) -> Tuple[pd.DataFrame, pd.Series]:
+        """Perform random oversampling.
+
+        Args:
+            X: Input features.
+            y: Target variable.
+
+        Returns:
+            Tuple of random oversampled features and target.
+        """
+        pass
+
+    def _fit_resample_mutation(
+        self, x: pd.DataFrame, y: pd.Series
+    ) -> Tuple[pd.DataFrame, pd.Series]:
+        """Perform mutation oversampling.
+
+        Args:
+            X: Input features.
+            y: Target variable.
+
+        Returns:
+            Tuple of mutation oversampled features and target.
+        """
+        pass
+
     def _fit_resample_smote(
         self, x: pd.DataFrame, y: pd.Series
     ) -> Tuple[pd.DataFrame, pd.Series]:
@@ -90,7 +123,18 @@ class Oversampler():
         adasyn = ADASYN()
         return adasyn.fit_resample(x, y)
 
-    def _log_purity(self):
+    def get_oversampled_fingerprint(self) -> List[int]:
+        """Get indices of oversampled rows.
+
+        Returns:
+            Dataframe with:
+                - index: Index of the oversampled row.
+                - method: Method used for oversampling.
+                - iteration: Iteration number.
+        """
+        pass
+
+    def _generate_purity(self):
         pass
 
     def get_purity_object(self) -> Purity:
