@@ -1,30 +1,32 @@
-"""Oversampler module for iambalance package."""
+"""Oversampler module for imbalance package."""
 
-from typing import Any, List
+from typing import Any, List, Tuple
 import numpy as np
 import pandas as pd
 from imblearn.over_sampling import SMOTE, ADASYN
 from .purity import Purity
 
 
-class Oversampler():
+class Oversampler:
     """A class for performing multiple oversampling techniques.
 
     This class combines various oversampling methods:
-        - random - Random oversampling
-        - mutation - Random oversampling with mutation to neighboring columns.
-        - smote - Synthetic Minority Over-sampling Technique.
-        - adasyn - Adaptive Synthetic Sampling Approach for Imbalanced Learning.
+        - random: Random oversampling
+        - mutation: Random oversampling with mutation to neighboring columns
+        - smote: Synthetic Minority Over-sampling Technique
+        - adasyn: Adaptive Synthetic Sampling Approach for Imbalanced Learning
 
     It allows for customized oversampling strategies and includes purity measures.
 
     Attributes:
         methods (List[str]): List of oversampling methods to use.
-        oversample_contribution (List[float]): Proportion of oversampling for each method.
-        oversample_count (int): Number of rows to oversample per iteration.
+        method_contributions (List[float]): Proportion of oversampling for each method.
         iterations (int): Number of iterations for oversampling.
-        purity_trend (List[Tuple]): List to store purity trends.
+        purity (Purity): Purity object for measuring data quality.
 
+    Raises:
+        ValueError: If method_contributions is not a list of floats or if its length
+                    doesn't match the length of methods.
     """
 
     def __init__(
@@ -34,35 +36,30 @@ class Oversampler():
         iterations: int = 1,
     ):
         if not isinstance(method_contributions, list) or not all(isinstance(i, float) for i in method_contributions):
-            raise ValueError("oversample_size must be a list of floats.")
+            raise ValueError("method_contributions must be a list of floats.")
         if len(method_contributions) != len(methods):
             raise ValueError(
-                "Length of oversample_contributions must match length of methods.")
+                "Length of method_contributions must match length of methods.")
 
-        self.methods = methods
-        self.method_contributions = method_contributions
+        self.methods = methods or ["random", "mutation", "smote", "adasyn"]
+        self.method_contributions = method_contributions or [
+            1/len(self.methods) for _ in self.methods]
         self.iterations = iterations
-
-        if self.methods is None:
-            self.methods = ["random", "mutation", "smote", "adasyn"]
-        if self.method_contributions is None:
-            self.method_contributions = list(
-                1/len(self.methods) for _ in self.methods)
 
         # Purity object
         self.purity = Purity()
 
-    def fit_resample(
-        self, x: pd.DataFrame, y: str
-    ) -> pd.DataFrame:
+    def fit_resample(self, x: pd.DataFrame, y: str) -> pd.DataFrame:
         """Fit the oversampler and resample the data.
 
+        This method applies the specified oversampling techniques to the input data.
+
         Args:
-            X: Input features.
-            y: Name of the target variable.
+            x (pd.DataFrame): Input features.
+            y (str): Name of the target variable.
 
         Returns:
-            Dataframe with oversampled features.
+            pd.DataFrame: Dataframe with oversampled features.
         """
         pass
 
@@ -71,14 +68,16 @@ class Oversampler():
     ) -> pd.DataFrame:
         """Perform random oversampling.
 
+        This method randomly duplicates samples from the minority class.
+
         Args:
-            x: Input features.
-            y: Name of the target variable.
-            nrows: Number of rows to be generated.
-            target_class: The class that must be generated.
+            x (pd.DataFrame): Input features.
+            y (str): Name of the target variable.
+            nrows (int): Number of rows to be generated.
+            target_class (Any): The class that must be generated.
 
         Returns:
-            Random oversampled features.
+            pd.DataFrame: Random oversampled features.
         """
         minority_class = x[x[y] == target_class]
         oversampled = minority_class.sample(n=nrows, replace=True)
@@ -89,14 +88,17 @@ class Oversampler():
     ) -> pd.DataFrame:
         """Perform mutation oversampling.
 
+        This method randomly duplicates samples from the minority class and applies
+        a small mutation to the numerical features.
+
         Args:
-            x: Input features.
-            y: Name of the target variable.
-            nrows: Number of rows to be generated.
-            target_class: The class that must be generated.
+            x (pd.DataFrame): Input features.
+            y (str): Name of the target variable.
+            nrows (int): Number of rows to be generated.
+            target_class (Any): The class that must be generated.
 
         Returns:
-            Mutation oversampled features.
+            pd.DataFrame: Mutation oversampled features.
         """
         minority_class = x[x[y] == target_class]
         oversampled = minority_class.sample(n=nrows, replace=True)
@@ -115,14 +117,17 @@ class Oversampler():
     ) -> pd.DataFrame:
         """Perform SMOTE oversampling.
 
+        This method applies the Synthetic Minority Over-sampling Technique (SMOTE)
+        to generate new samples for the minority class.
+
         Args:
-            x: Input features.
-            y: Name of the target variable.
-            nrows: Number of rows to be generated.
-            target_class: The class that must be generated.
+            x (pd.DataFrame): Input features.
+            y (str): Name of the target variable.
+            nrows (int): Number of rows to be generated.
+            target_class (Any): The class that must be generated.
 
         Returns:
-            SMOTE oversampled features.
+            pd.DataFrame: SMOTE oversampled features.
         """
         smote = SMOTE(sampling_strategy={target_class: nrows})
         target = x[y]
@@ -138,14 +143,17 @@ class Oversampler():
     ) -> pd.DataFrame:
         """Perform ADASYN oversampling.
 
+        This method applies the Adaptive Synthetic (ADASYN) sampling approach
+        to generate new samples for the minority class.
+
         Args:
-            x: Input features.
-            y: Name of the target variable.
-            nrows: Number of rows to be generated.
-            target_class: The class that must be generated.
+            x (pd.DataFrame): Input features.
+            y (str): Name of the target variable.
+            nrows (int): Number of rows to be generated.
+            target_class (Any): The class that must be generated.
 
         Returns:
-            ADASYN oversampled features.
+            pd.DataFrame: ADASYN oversampled features.
         """
         adasyn = ADASYN(sampling_strategy={target_class: nrows})
         target = x[y]
@@ -156,11 +164,14 @@ class Oversampler():
         x_resampled[y] = target_resampled
         return x_resampled
 
-    def get_oversampled_fingerprint(self) -> List[int]:
+    def get_oversampled_fingerprint(self) -> pd.DataFrame:
         """Get indices of oversampled rows.
 
+        This method returns information about the oversampled rows, including
+        their indices, the method used for oversampling, and the iteration number.
+
         Returns:
-            Dataframe with:
+            pd.DataFrame: Dataframe with columns:
                 - index: Index of the oversampled row.
                 - method: Method used for oversampling.
                 - iteration: Iteration number.
@@ -168,12 +179,20 @@ class Oversampler():
         pass
 
     def _generate_purity(self):
+        """Generate purity measures for the oversampled data.
+
+        This method calculates and updates the purity measures for the
+        oversampled dataset.
+        """
         pass
 
     def get_purity_object(self) -> Purity:
         """Return the purity object.
 
+        This method provides access to the Purity object, which contains
+        measures of data quality for the oversampled dataset.
+
         Returns:
-            Purity object.
+            Purity: Purity object containing data quality measures.
         """
         return self.purity
