@@ -23,11 +23,15 @@ class Oversampler(BaseEstimator, ClassifierMixin):
 
     def __init__(
         self,
-        methods: List[str] = ["smote", "adasyn"],
-        oversample_size: List[float] = [0.5, 0.5],
+        methods: List[str] = None,
+        oversample_size: List[float] = None,
         oversample_count: int = 100,
         iterations: int = 1,
     ):
+        if methods is None:
+            methods = ["smote", "adasyn"]
+        if oversample_size is None:
+            oversample_size = [0.5, 0.5]
         if not isinstance(oversample_size, list) or not all(isinstance(i, float) for i in oversample_size):
             raise ValueError("oversample_size must be a list of floats.")
         if sum(oversample_size) != 1.0:
@@ -41,7 +45,7 @@ class Oversampler(BaseEstimator, ClassifierMixin):
         self.purity_trend = []
 
     def fit_resample(
-        self, X: pd.DataFrame, y: pd.Series
+        self, x: pd.DataFrame, y: pd.Series
     ) -> Tuple[pd.DataFrame, pd.Series]:
         """Fit the oversampler and resample the data.
 
@@ -55,7 +59,7 @@ class Oversampler(BaseEstimator, ClassifierMixin):
         pass
 
     def _fit_resample_smote(
-        self, X: pd.DataFrame, y: pd.Series
+        self, x: pd.DataFrame, y: pd.Series
     ) -> Tuple[pd.DataFrame, pd.Series]:
         """Perform SMOTE oversampling.
 
@@ -67,10 +71,10 @@ class Oversampler(BaseEstimator, ClassifierMixin):
             Tuple of SMOTE oversampled features and target.
         """
         smote = SMOTE()
-        return smote.fit_resample(X, y)
+        return smote.fit_resample(x, y)
 
     def _fit_resample_adasyn(
-        self, X: pd.DataFrame, y: pd.Series
+        self, x: pd.DataFrame, y: pd.Series
     ) -> Tuple[pd.DataFrame, pd.Series]:
         """Perform ADASYN oversampling.
 
@@ -82,7 +86,7 @@ class Oversampler(BaseEstimator, ClassifierMixin):
             Tuple of ADASYN oversampled features and target.
         """
         adasyn = ADASYN()
-        return adasyn.fit_resample(X, y)
+        return adasyn.fit_resample(x, y)
 
     def purity(self, original: pd.DataFrame, oversampled: pd.DataFrame) -> float:
         """Calculate purity of oversampled data.
