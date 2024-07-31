@@ -3,10 +3,9 @@
 from typing import List, Tuple, Dict
 import pandas as pd
 from imblearn.over_sampling import SMOTE, ADASYN
-from sklearn.base import BaseEstimator, ClassifierMixin
 
 
-class Oversampler(BaseEstimator, ClassifierMixin):
+class Oversampler():
     """A class for performing multiple oversampling techniques.
 
     This class combines various oversampling methods including SMOTE and ADASYN.
@@ -24,22 +23,22 @@ class Oversampler(BaseEstimator, ClassifierMixin):
     def __init__(
         self,
         methods: List[str] = None,
-        oversample_size: List[float] = None,
+        oversample_contribution: List[float] = None,
         oversample_count: int = 100,
         iterations: int = 1,
     ):
         if methods is None:
-            methods = ["smote", "adasyn"]
-        if oversample_size is None:
-            oversample_size = [0.5, 0.5]
-        if not isinstance(oversample_size, list) or not all(isinstance(i, float) for i in oversample_size):
+            methods = ["random", "mutation", "smote", "adasyn"]
+        if oversample_contribution is None:
+            oversample_contribution = list(1/len(methods) for _ in methods)
+        if not isinstance(oversample_contribution, list) or not all(isinstance(i, float) for i in oversample_contribution):
             raise ValueError("oversample_size must be a list of floats.")
-        if sum(oversample_size) != 1.0:
+        if len(oversample_contribution) != len(methods):
             raise ValueError(
-                "The elements of oversample_size must sum to 1.0.")
+                "Length of oversample_contributions must match length of methods.")
 
         self.methods = methods
-        self.oversample_size = oversample_size
+        self.oversample_contribution = oversample_contribution
         self.oversample_count = oversample_count
         self.iterations = iterations
         self.purity_trend = []
@@ -87,18 +86,6 @@ class Oversampler(BaseEstimator, ClassifierMixin):
         """
         adasyn = ADASYN()
         return adasyn.fit_resample(x, y)
-
-    def purity(self, original: pd.DataFrame, oversampled: pd.DataFrame) -> float:
-        """Calculate purity of oversampled data.
-
-        Args:
-            original: Original dataset.
-            oversampled: Oversampled dataset.
-
-        Returns:
-            Purity score.
-        """
-        pass
 
     def get_purity_trend(self) -> List[Tuple]:
         """Get the purity trend.
