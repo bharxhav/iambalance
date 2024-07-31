@@ -1,6 +1,7 @@
 """Oversampler module for iambalance package."""
 
-from typing import List, Tuple
+from typing import List
+import numpy as np
 import pandas as pd
 from imblearn.over_sampling import SMOTE, ADASYN
 from .purity import Purity
@@ -52,13 +53,13 @@ class Oversampler():
         self.purity = Purity()
 
     def fit_resample(
-        self, x: pd.DataFrame, y: pd.Series
-    ) -> Tuple[pd.DataFrame, pd.Series]:
+        self, x: pd.DataFrame, y: str
+    ) -> pd.DataFrame:
         """Fit the oversampler and resample the data.
 
         Args:
             X: Input features.
-            y: Target variable.
+            y: Name of the target variable.
 
         Returns:
             Tuple of oversampled features and target.
@@ -66,62 +67,88 @@ class Oversampler():
         pass
 
     def _fit_resample_random(
-        self, x: pd.DataFrame, y: pd.Series
+        self, x: pd.DataFrame, y: str
     ) -> pd.DataFrame:
         """Perform random oversampling.
 
         Args:
             x: Input features.
-            y: Target variable.
+            y: Name of the target variable.
 
         Returns:
             Random oversampled features.
         """
-        pass
+        minority_class = x[x[y].value_counts().idxmin()]
+        oversampled = minority_class.sample(
+            n=self.oversample_count, replace=True)
+        return pd.concat([x, oversampled], ignore_index=True)
 
     def _fit_resample_mutation(
-        self, x: pd.DataFrame, y: pd.Series
+        self, x: pd.DataFrame, y: str
     ) -> pd.DataFrame:
         """Perform mutation oversampling.
 
         Args:
             x: Input features.
-            y: Target variable.
+            y: Name of the target variable.
 
         Returns:
             Mutation oversampled features.
         """
-        pass
+        minority_class = x[x[y].value_counts().idxmin()]
+        oversampled = minority_class.sample(
+            n=self.oversample_count, replace=True)
+
+        # Perform mutation on the oversampled data
+        for column in oversampled.columns:
+            if column != y and oversampled[column].dtype in ['int64', 'float64']:
+                mutation = oversampled[column].mean() * 0.1  # 10% mutation
+                oversampled[column] += np.random.normal(
+                    0, mutation, oversampled.shape[0])
+
+        return pd.concat([x, oversampled], ignore_index=True)
 
     def _fit_resample_smote(
-        self, x: pd.DataFrame, y: pd.Series
+        self, x: pd.DataFrame, y: str
     ) -> pd.DataFrame:
         """Perform SMOTE oversampling.
 
         Args:
             x: Input features.
-            y: Target variable.
+            y: Name of the target variable.
 
         Returns:
             SMOTE oversampled features.
         """
         smote = SMOTE()
-        return smote.fit_resample(x, y)[0]
+        target = x[y]
+        features = x.drop(columns=[y])
+        features_resampled, target_resampled = smote.fit_resample(
+            features, target)
+        x_resampled = features_resampled.copy()
+        x_resampled[y] = target_resampled
+        return x_resampled
 
     def _fit_resample_adasyn(
-        self, x: pd.DataFrame, y: pd.Series
+        self, x: pd.DataFrame, y: str
     ) -> pd.DataFrame:
         """Perform ADASYN oversampling.
 
         Args:
             x: Input features.
-            y: Target variable.
+            y: Name of the target variable.
 
         Returns:
             ADASYN oversampled features.
         """
         adasyn = ADASYN()
-        return adasyn.fit_resample(x, y)[0]
+        target = x[y]
+        features = x.drop(columns=[y])
+        features_resampled, target_resampled = adasyn.fit_resample(
+            features, target)
+        x_resampled = features_resampled.copy()
+        x_resampled[y] = target_resampled
+        return x_resampled
 
     def get_oversampled_fingerprint(self) -> List[int]:
         """Get indices of oversampled rows.
