@@ -6,12 +6,12 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setup(
     name="iambalance",
     version="0.1.0",
-    author="Your Name",
-    author_email="your.email@example.com",
+    author="Bhargav Kantheti",
+    author_email="admin@bharxhav.com",
     description="A package for advanced oversampling of imbalanced datasets",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/iambalance",
+    url="https://github.com/bharxhav/iambalance",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     classifiers=[
