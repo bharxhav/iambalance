@@ -4,7 +4,7 @@ from typing import Any, List
 import numpy as np
 import pandas as pd
 from imblearn.over_sampling import SMOTE, ADASYN
-from .purity import Purity
+from iambalance import Purity
 
 
 class Oversampler:
@@ -49,7 +49,10 @@ class Oversampler:
         self.iterations = iterations
 
         # Purity object
-        self.purity = Purity()
+        self.purity = Purity(purity_range)
+
+        self.fingerprint_df = pd.DataFrame(
+            columns=["index", "method", "iteration"])
 
     def fit_resample(self, x: pd.DataFrame, y: str) -> pd.DataFrame:
         """Fit the oversampler and resample the data.
@@ -83,35 +86,6 @@ class Oversampler:
         """
         minority_class = x[x[y] == target_class]
         return minority_class.sample(n=nrows, replace=True)
-
-    def _fit_resample_mutation(
-        self, x: pd.DataFrame, y: str, nrows: int, target_class: Any
-    ) -> pd.DataFrame:
-        """Perform mutation oversampling.
-
-        This method randomly duplicates samples from the minority class and applies
-        a small mutation to the numerical features.
-
-        Args:
-            x (pd.DataFrame): Input features.
-            y (str): Name of the target variable.
-            nrows (int): Number of new rows to be generated.
-            target_class (Any): The class that must be generated.
-
-        Returns:
-            pd.DataFrame: Newly generated rows using mutation oversampling.
-        """
-        minority_class = x[x[y] == target_class]
-        oversampled = minority_class.sample(n=nrows, replace=True)
-
-        # Perform mutation on the oversampled data
-        for column in oversampled.columns:
-            if column != y and oversampled[column].dtype in ['int64', 'float64']:
-                mutation = oversampled[column].mean() * 0.1  # 10% mutation
-                oversampled[column] += np.random.normal(
-                    0, mutation, oversampled.shape[0])
-
-        return oversampled
 
     def _fit_resample_smote(
         self, x: pd.DataFrame, y: str, nrows: int, target_class: Any
