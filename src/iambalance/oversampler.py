@@ -11,16 +11,15 @@ class Oversampler:
 
     This class combines various oversampling methods:
         - random: Random oversampling
-        - mutation: Random oversampling with mutation to neighboring columns
         - smote: Synthetic Minority Over-sampling Technique
         - adasyn: Adaptive Synthetic Sampling Approach for Imbalanced Learning
+        # - mutation: Random oversampling with mutation to neighboring columns (not implemented yet)
 
     It allows for customized oversampling strategies and includes purity measures.
 
     Attributes:
         methods (List[str]): List of oversampling methods to use.
         method_contributions (List[float]): Proportion of oversampling for each method.
-        iterations (int): Number of iterations for oversampling.
 
     Raises:
         ValueError: If method_contributions is not a list of floats or if its length
@@ -31,7 +30,6 @@ class Oversampler:
         self,
         methods: List[str] = None,
         method_contributions: List[float] = None,
-        iterations: int = 1,
         purity_range: int = 0,
     ):
         if not isinstance(method_contributions, list) or not all(isinstance(i, float) for i in method_contributions):
@@ -42,30 +40,61 @@ class Oversampler:
         if purity_range not in [0, 1, 2]:
             raise ValueError("purity_range must be 0, 1, or 2.")
 
-        self.methods = methods or ["random", "mutation", "smote", "adasyn"]
+        self.methods = list(map(str.lower, methods)) or [
+            "random", "smote", "adasyn"]
         self.method_contributions = method_contributions or [
             1/len(self.methods) for _ in self.methods]
-        self.iterations = iterations
 
         # Purity object
         self.purity = Purity(purity_range)
 
         self.fingerprint_df = pd.DataFrame(
-            columns=["index", "method", "iteration"])
+            columns=["index", "method"])
 
-    def fit_resample(self, x: pd.DataFrame, y: str) -> pd.DataFrame:
+    def fit_resample(self, x: pd.DataFrame, y: str, target_class: Any) -> pd.DataFrame:
         """Fit the oversampler and resample the data.
 
         This method applies the specified oversampling techniques to the input data.
 
         Args:
             x (pd.DataFrame): Input features.
-            y (str): Name of the target variable.
+            y (str): Name of the column to be oversampled.
+            target_class (Any): The specific class to oversample.
 
         Returns:
             pd.DataFrame: Dataframe with oversampled features.
         """
-        pass
+
+        x_resampled = x.copy()
+
+        for method, proportion in zip(self.methods, self.method_contributions):
+
+            target_class_count = x[x[y] == target_class].shape[0]
+            nrows = int(proportion * target_class_count)
+
+            if method == "random":
+                new_rows = self._fit_resample_random(
+                    x, y, nrows, target_class)
+            elif method == "smote":
+                new_rows = self._fit_resample_smote(
+                    x, y, nrows, target_class)
+            elif method == "adasyn":
+                new_rows = self._fit_resample_adasyn(
+                    x, y, nrows, target_class)
+            else:
+                raise ValueError("Invalid oversampling method.")
+
+            start_index = len(x_resampled)
+            x_resampled = pd.concat([x_resampled, new_rows])
+
+            new_fingerprint = pd.DataFrame({
+                "index": range(start_index, len(x_resampled)),
+                "method": method
+            })
+            self.fingerprint_df = pd.concat(
+                [self.fingerprint_df, new_fingerprint], ignore_index=True)
+
+        return x_resampled
 
     def _fit_resample_random(
         self, x: pd.DataFrame, y: str, nrows: int, target_class: Any
@@ -146,13 +175,12 @@ class Oversampler:
         """Get indices of oversampled rows.
 
         This method returns information about the oversampled rows, including
-        their indices, the method used for oversampling, and the iteration number.
+        their indices, the method used for oversampling.
 
         Returns:
             pd.DataFrame: Dataframe with columns:
                 - index: Index of the oversampled row.
                 - method: Method used for oversampling.
-                - iteration: Iteration number.
         """
         return self.fingerprint_df
 
