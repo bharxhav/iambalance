@@ -20,6 +20,7 @@ class Oversampler:
     Attributes:
         methods (List[str]): List of oversampling methods to use.
         method_contributions (List[float]): Proportion of oversampling for each method.
+        iterations (int): Number of iterations to run the oversampling.
 
     Raises:
         ValueError: If method_contributions is not a list of floats or if its length
@@ -31,6 +32,7 @@ class Oversampler:
         methods: List[str] = None,
         method_contributions: List[float] = None,
         purity_range: int = 0,
+        iterations: int = 1
     ):
         if not isinstance(method_contributions, list) or not all(isinstance(i, float) for i in method_contributions):
             raise ValueError("method_contributions must be a list of floats.")
@@ -51,6 +53,8 @@ class Oversampler:
         self.fingerprint_df = pd.DataFrame(
             columns=["index", "method"])
 
+        self.iterations = iterations
+
     def fit_resample(self, x: pd.DataFrame, y: str, target_class: Any) -> pd.DataFrame:
         """Fit the oversampler and resample the data.
 
@@ -67,32 +71,33 @@ class Oversampler:
 
         x_resampled = x.copy()
 
-        for method, proportion in zip(self.methods, self.method_contributions):
+        for iteration in range(self.iterations):
+            for method, proportion in zip(self.methods, self.method_contributions):
+                target_class_count = x[x[y] == target_class].shape[0]
+                nrows = int(proportion * target_class_count / self.iterations)
 
-            target_class_count = x[x[y] == target_class].shape[0]
-            nrows = int(proportion * target_class_count)
+                if method == "random":
+                    new_rows = self._fit_resample_random(
+                        x, y, nrows, target_class)
+                elif method == "smote":
+                    new_rows = self._fit_resample_smote(
+                        x, y, nrows, target_class)
+                elif method == "adasyn":
+                    new_rows = self._fit_resample_adasyn(
+                        x, y, nrows, target_class)
+                else:
+                    raise ValueError("Invalid oversampling method.")
 
-            if method == "random":
-                new_rows = self._fit_resample_random(
-                    x, y, nrows, target_class)
-            elif method == "smote":
-                new_rows = self._fit_resample_smote(
-                    x, y, nrows, target_class)
-            elif method == "adasyn":
-                new_rows = self._fit_resample_adasyn(
-                    x, y, nrows, target_class)
-            else:
-                raise ValueError("Invalid oversampling method.")
+                start_index = len(x_resampled)
+                x_resampled = pd.concat([x_resampled, new_rows])
 
-            start_index = len(x_resampled)
-            x_resampled = pd.concat([x_resampled, new_rows])
-
-            new_fingerprint = pd.DataFrame({
-                "index": range(start_index, len(x_resampled)),
-                "method": method
-            })
-            self.fingerprint_df = pd.concat(
-                [self.fingerprint_df, new_fingerprint], ignore_index=True)
+                new_fingerprint = pd.DataFrame({
+                    "index": range(start_index, len(x_resampled)),
+                    "method": method,
+                    "iteration": iteration
+                })
+                self.fingerprint_df = pd.concat(
+                    [self.fingerprint_df, new_fingerprint], ignore_index=True)
 
         return x_resampled
 
