@@ -4,7 +4,7 @@ from typing import Any, List
 import numpy as np
 import pandas as pd
 from imblearn.over_sampling import SMOTE, ADASYN
-from iambalance import Purity
+from .purity import Purity
 
 
 class Oversampler:
