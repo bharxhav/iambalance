@@ -26,6 +26,9 @@ share/python-wheels/
 .installed.cfg
 *.egg
 
+# Sample datasets
+test_db/
+
 # PyInstaller
 *.manifest
 *.spec
