@@ -1,7 +1,6 @@
 """Oversampler module for imbalance package."""
 
 from typing import Any, List
-import numpy as np
 import pandas as pd
 from imblearn.over_sampling import SMOTE, ADASYN
 from .purity import Purity
@@ -155,7 +154,7 @@ class Oversampler:
                 - method: Method used for oversampling.
                 - iteration: Iteration number.
         """
-        pass
+        return self.fingerprint_df
 
     def _generate_purity(self):
         """Generate purity measures for the oversampled data.
